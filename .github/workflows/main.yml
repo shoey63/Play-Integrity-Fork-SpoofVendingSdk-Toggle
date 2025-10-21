@@ -15,7 +15,6 @@ jobs:
         uses: actions/checkout@v3
 
       - name: Set version tag
-        id: version
         run: echo "VERSION=$(date +'%Y-%m-%d-%H%M')" >> $GITHUB_ENV
 
       - name: Filter files to zip
@@ -26,10 +25,10 @@ jobs:
       - name: Create ZIP archive
         run: |
           cd publish
-          zip -r ../selected-files-${VERSION}.zip .
+          zip -r ../selected-files-${{ env.VERSION }}.zip .
 
       - name: Upload ZIP as artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: selected-files-${{ env.VERSION }}
           path: selected-files-${{ env.VERSION }}.zip
