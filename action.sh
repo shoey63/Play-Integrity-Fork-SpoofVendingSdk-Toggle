@@ -69,7 +69,7 @@ if [ "$AFTER" = "0" ]; then
 else
     ICON="⚠️"
 fi
-
+zip -r spoof-vending-toggle-v${1.0}.zip module META-INF -x "*.git*"
 echo "✅  Done. Changes should be active."
 echo "    Verifying file content:"
 echo ""
