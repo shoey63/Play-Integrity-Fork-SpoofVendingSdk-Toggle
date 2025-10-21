@@ -1,0 +1,36 @@
+name: Build Flashable Zip
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+    paths-ignore:
+      - '**.md'
+  pull_request:
+    branches: [ main ]
+    paths-ignore:
+      - '**.md'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Create flashable module zip
+        run: |
+          zip -r9 spoof-vending-toggle-${{ github.run_number }}.zip . \
+            -x "*.git*" \
+            -x "README.md" \
+            -x ".github/*"
+
+      - name: Upload module zip as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: spoof-vending-toggle-${{ github.run_number }}
+          path: spoof-vending-toggle-${{ github.run_number }}.zip
+          compression-level: 9
