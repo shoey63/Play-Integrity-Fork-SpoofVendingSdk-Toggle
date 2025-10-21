@@ -10,6 +10,8 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write   # allow creating and uploading releases
 
     steps:
       - name: Check out repository
