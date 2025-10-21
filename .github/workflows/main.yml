@@ -26,4 +26,3 @@ jobs:
       with:
         name: PIFork-toggle-CI_#${{ github.run_number }}
         path: 'module/*'
-        compression-level: 9
