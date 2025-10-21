@@ -1,4 +1,4 @@
-name: Zip Selected Files with Versioning
+name: Zip Module Folder with Versioning
 
 on:
   workflow_dispatch:
@@ -17,18 +17,12 @@ jobs:
       - name: Set version tag
         run: echo "VERSION=$(date +'%Y-%m-%d-%H%M')" >> $GITHUB_ENV
 
-      - name: Filter files to zip
+      - name: Create ZIP from module folder
         run: |
-          mkdir publish
-          rsync -av --exclude='README.md' --exclude='.github/workflows' ./ ./publish/
-
-      - name: Create ZIP archive (flat structure)
-        run: |
-          cd publish
-          zip -r ../selected-files-${{ env.VERSION }}.zip ./*
+          zip -r module-${{ env.VERSION }}.zip module
 
       - name: Upload ZIP as artifact
         uses: actions/upload-artifact@v4
         with:
-          name: selected-files-${{ env.VERSION }}
-          path: selected-files-${{ env.VERSION }}.zip
+          name: module-${{ env.VERSION }}
+          path: module-${{ env.VERSION }}.zip
