@@ -1,10 +1,10 @@
 name: Zip Selected Files with Versioning
 
 on:
-  workflow_dispatch:  # Manual trigger
+  workflow_dispatch:
   push:
     branches:
-      - main  # Optional: remove if you only want manual runs
+      - main
 
 jobs:
   zip:
@@ -22,10 +22,10 @@ jobs:
           mkdir publish
           rsync -av --exclude='README.md' --exclude='.github/workflows' ./ ./publish/
 
-      - name: Create ZIP archive
+      - name: Create ZIP archive (flat structure)
         run: |
           cd publish
-          zip -r ../selected-files-${{ env.VERSION }}.zip .
+          zip -r ../selected-files-${{ env.VERSION }}.zip ./*
 
       - name: Upload ZIP as artifact
         uses: actions/upload-artifact@v4
