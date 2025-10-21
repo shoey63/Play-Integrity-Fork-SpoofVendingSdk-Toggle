@@ -1,28 +1,29 @@
-name: Zip Module Folder with Versioning
+name: Android CI
 
 on:
   workflow_dispatch:
   push:
-    branches:
-      - main
+    branches: main
+    paths-ignore: '**.md'
+  pull_request:
+    branches: main
+    paths-ignore: '**.md'
 
 jobs:
-  zip:
-    runs-on: ubuntu-latest
+  build:
+
+    runs-on: macos-26
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
+    - name: Check out
+      uses: actions/checkout@v5
+      with:
+        submodules: 'recursive'
+        fetch-depth: 0
 
-      - name: Set version tag
-        run: echo "VERSION=$(date +'%Y-%m-%d-%H%M')" >> $GITHUB_ENV
-
-      - name: Create ZIP from module folder
-        run: |
-          zip -r module-${{ env.VERSION }}.zip module
-
-      - name: Upload ZIP as artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: module-${{ env.VERSION }}
-          path: module-${{ env.VERSION }}.zip
+    - name: Upload CI module zip as artifact zip
+      uses: actions/upload-artifact@v4
+      with:
+        name: PIFork-toggle-CI_#${{ github.run_number }}
+        path: 'module/*'
+        compression-level: 9
