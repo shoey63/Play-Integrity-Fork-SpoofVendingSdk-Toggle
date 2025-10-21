@@ -1,7 +1,10 @@
-name: Zip Selected Files
+name: Zip Selected Files with Versioning
 
 on:
-  workflow_dispatch:  # Manual trigger from Actions tab
+  workflow_dispatch:  # Manual trigger
+  push:
+    branches:
+      - main  # Optional: remove if you only want manual runs
 
 jobs:
   zip:
@@ -11,6 +14,10 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
+      - name: Set version tag
+        id: version
+        run: echo "VERSION=$(date +'%Y-%m-%d-%H%M')" >> $GITHUB_ENV
+
       - name: Filter files to zip
         run: |
           mkdir publish
@@ -19,10 +26,10 @@ jobs:
       - name: Create ZIP archive
         run: |
           cd publish
-          zip -r ../selected-files.zip .
+          zip -r ../selected-files-${VERSION}.zip .
 
       - name: Upload ZIP as artifact
         uses: actions/upload-artifact@v3
         with:
-          name: selected-files
-          path: selected-files.zip
+          name: selected-files-${{ env.VERSION }}
+          path: selected-files-${{ env.VERSION }}.zip
