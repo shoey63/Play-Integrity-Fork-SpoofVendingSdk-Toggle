@@ -1,5 +1,6 @@
 name: Build and Release Magisk Module
 
+
 on:
   push:
     tags:
