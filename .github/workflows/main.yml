@@ -1,23 +1,28 @@
-name: Build and Release Magisk Module
-
+name: Zip Selected Files
 
 on:
-  push:
-    tags:
-      - 'v*'
+  workflow_dispatch:  # Manual trigger from Actions tab
 
 jobs:
-  build:
+  zip:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v3
 
-      - name: Build ZIP
-        run: bash action.sh
+      - name: Filter files to zip
+        run: |
+          mkdir publish
+          rsync -av --exclude='README.md' --exclude='.github/workflows' ./ ./publish/
 
-      - name: Create Release and Upload ZIP
-        uses: softprops/action-gh-release@v2
+      - name: Create ZIP archive
+        run: |
+          cd publish
+          zip -r ../selected-files.zip .
+
+      - name: Upload ZIP as artifact
+        uses: actions/upload-artifact@v3
         with:
-          files: "*.zip"
+          name: selected-files
+          path: selected-files.zip
