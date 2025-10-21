@@ -1,0 +1,3 @@
+#!/sbin/sh
+# Dummy binary for universal Magisk/KernelSU compatibility
+exit 0
