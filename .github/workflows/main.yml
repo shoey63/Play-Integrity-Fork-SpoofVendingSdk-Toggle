@@ -28,9 +28,9 @@ jobs:
             -x "README.md" \
             -x ".github/*"
 
-      - name: Upload module zip as artifact
+      - name: Upload flashable module zip (no re-compression)
         uses: actions/upload-artifact@v4
         with:
           name: spoof-vending-toggle-${{ github.run_number }}
           path: spoof-vending-toggle-${{ github.run_number }}.zip
-          compression-level: 9
+          compression-level: 0   # no extra zipping
