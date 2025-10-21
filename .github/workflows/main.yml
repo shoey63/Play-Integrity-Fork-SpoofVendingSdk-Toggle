@@ -1,34 +1,22 @@
-name: Build Flashable Zip
+name: Build and Release Magisk Module
 
 on:
-  workflow_dispatch:
   push:
-    branches: [ main ]
-    paths-ignore:
-      - '**.md'
+    tags:
+      - 'v*'
 
 jobs:
   build:
     runs-on: ubuntu-latest
-    permissions:
-      contents: write   # allow creating and uploading releases
 
     steps:
-      - name: Check out repository
+      - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Create flashable module zip
-        run: |
-          zip -r9 spoof-vending-toggle-${{ github.run_number }}.zip . \
-            -x "*.git*" \
-            -x "README.md" \
-            -x ".github/*"
+      - name: Build ZIP
+        run: bash action.sh
 
-      - name: Upload flashable zip to GitHub Release
+      - name: Create Release and Upload ZIP
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: CI_${{ github.run_number }}
-          name: "PlayIntegrityFork-Toggle CI #${{ github.run_number }}"
-          files: spoof-vending-toggle-${{ github.run_number }}.zip
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          files: "*.zip"
