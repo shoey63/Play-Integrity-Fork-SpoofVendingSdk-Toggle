@@ -8,9 +8,9 @@ on:
         required: false
         default: "false"
   push:
-    branches: main
+    branches: [ main ]
   pull_request:
-    branches: main
+    branches: [ main ]
 
 jobs:
   build:
@@ -26,29 +26,34 @@ jobs:
           submodules: 'recursive'
           fetch-depth: 0
 
+      # Build the flashable zip manually
       - name: Prepare flashable module zip
         run: |
+          mkdir out
           zipname="spoofVendingSdkToggle_${{ github.run_number }}.zip"
           echo "Creating $zipname ..."
-          zip -r9 "$zipname" . \
+          zip -r9 "out/$zipname" . \
             -x "*.git*" \
             -x "README.md" \
             -x ".github/*"
-          echo "Built module zip: $zipname"
           echo "ZIP_NAME=$zipname" >> $GITHUB_ENV
 
-      - name: Upload CI module zip as artifact
+      # Upload the *actual flashable zip* as the artifact (no extra wrapping)
+      - name: Upload flashable zip as artifact
         uses: actions/upload-artifact@v4
         with:
           name: spoofVendingSdkToggle_#${{ github.run_number }}
-          path: ${{ env.ZIP_NAME }}
+          path: out/
+          compression-level: 0  # don't re-zip it!
 
+      # Optional: collect commit info for release notes
       - name: Get latest commit message
         id: commit
         run: |
           echo "MSG=$(git log -1 --pretty=%B | head -n 1)" >> $GITHUB_ENV
           echo "DATE=$(date -u '+%Y-%m-%d %H:%M UTC')" >> $GITHUB_ENV
 
+      # Optional release step (only if manually triggered with release=true)
       - name: Optionally create GitHub Release
         if: ${{ github.event.inputs.release == 'true' }}
         uses: softprops/action-gh-release@v2
@@ -61,6 +66,6 @@ jobs:
             - Date: ${{ env.DATE }}
             - Commit: ${{ github.sha }}
             - Message: ${{ env.MSG }}
-          files: ${{ env.ZIP_NAME }}
+          files: out/${{ env.ZIP_NAME }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
