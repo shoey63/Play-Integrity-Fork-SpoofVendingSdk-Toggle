@@ -2,6 +2,11 @@ name: Android CI
 
 on:
   workflow_dispatch:
+    inputs:
+      release:
+        description: "Also create a GitHub Release?"
+        required: false
+        default: "false"
   push:
     branches: main
   pull_request:
@@ -9,18 +14,53 @@ on:
 
 jobs:
   build:
-
     runs-on: macos-26
 
-    steps:
-    - name: Check out
-      uses: actions/checkout@v5
-      with:
-        submodules: 'recursive'
-        fetch-depth: 0
+    permissions:
+      contents: write  # needed for creating releases
 
-    - name: Upload CI module zip as artifact zip
-      uses: actions/upload-artifact@v4
-      with:
-        name: spoofVendingSdktoggle_#${{ github.run_number }}
-        path: '*'
+    steps:
+      - name: Check out
+        uses: actions/checkout@v5
+        with:
+          submodules: 'recursive'
+          fetch-depth: 0
+
+      - name: Prepare flashable module zip
+        run: |
+          zipname="spoofVendingSdkToggle_${{ github.run_number }}.zip"
+          echo "Creating $zipname ..."
+          zip -r9 "$zipname" . \
+            -x "*.git*" \
+            -x "README.md" \
+            -x ".github/*"
+          echo "Built module zip: $zipname"
+          echo "ZIP_NAME=$zipname" >> $GITHUB_ENV
+
+      - name: Upload CI module zip as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: spoofVendingSdkToggle_#${{ github.run_number }}
+          path: ${{ env.ZIP_NAME }}
+
+      - name: Get latest commit message
+        id: commit
+        run: |
+          echo "MSG=$(git log -1 --pretty=%B | head -n 1)" >> $GITHUB_ENV
+          echo "DATE=$(date -u '+%Y-%m-%d %H:%M UTC')" >> $GITHUB_ENV
+
+      - name: Optionally create GitHub Release
+        if: ${{ github.event.inputs.release == 'true' }}
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: CI_${{ github.run_number }}
+          name: "spoofVendingSdkToggle CI #${{ github.run_number }} (${{ env.DATE }})"
+          body: |
+            **Automated CI build**
+            - Build #: ${{ github.run_number }}
+            - Date: ${{ env.DATE }}
+            - Commit: ${{ github.sha }}
+            - Message: ${{ env.MSG }}
+          files: ${{ env.ZIP_NAME }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
