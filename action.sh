@@ -26,7 +26,8 @@ echo ""
 if [ "$FORMAT" = "prop" ]; then
     grep -E "^(spoof(Build|Props|Provider|Signature|VendingSdk)|verboseLogs)=" "$TARGET_FILE"
 else
-    grep -E '"(spoofBuild|spoofProps|spoofProvider|spoofSignature|spoofVendingSdk|verboseLogs)"' "$TARGET_FILE"     | sed 's/[", ]//g' | sed 's/:/=/g'
+    grep -E '"(spoofBuild|spoofProps|spoofProvider|spoofSignature|spoofVendingSdk|verboseLogs)"' "$TARGET_FILE" \
+    | sed 's/[", ]//g' | sed 's/:/=/g'
 fi
 
 # Extract current spoofVendingSdk value
@@ -69,7 +70,7 @@ if [ "$AFTER" = "0" ]; then
 else
     ICON="⚠️"
 fi
-zip -r spoof-vending-toggle-v${1.0}.zip module META-INF -x "*.git*"
+
 echo "✅  Done. Changes should be active."
 echo "    Verifying file content:"
 echo ""
