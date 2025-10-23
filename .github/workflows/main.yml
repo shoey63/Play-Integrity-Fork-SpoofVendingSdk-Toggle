@@ -1,7 +1,13 @@
 name: Android CI
 
 on:
-  workflow_dispatch: # <-- Manual trigger
+  workflow_dispatch: # Allows manual run
+    inputs:
+      create_release:
+        description: 'Create a GitHub Release with the module zip'
+        type: boolean
+        required: false
+        default: false
   push:
     branches: main
   pull_request:
@@ -10,10 +16,7 @@ on:
 jobs:
   build:
 
-    # Note: 'macos-26' is not a valid GitHub-hosted runner.
-    # I've changed this to 'ubuntu-latest' as it's the standard.
-    # You can also use 'macos-latest' if you specifically need macOS.
-    runs-on: ubuntu-latest
+    runs-on: macos-26
 
     steps:
     - name: Check out
@@ -22,11 +25,45 @@ jobs:
         submodules: 'recursive'
         fetch-depth: 0
 
-    # This 'Upload' step will ONLY run on a manual 'workflow_dispatch' trigger.
-    # It will be skipped on 'push' and 'pull_request'.
-    - name: Upload CI module zip as artifact zip
-      if: github.event_name == 'workflow_dispatch' # <-- This line makes it optional
+    - name: Set zip file name
+      id: set_filename
+      run: echo "ZIP_FILENAME=spoofVendingSdktoggle_$(date +%Y%m%d)_${{ github.sha }}.zip" >> $GITHUB_OUTPUT
+    
+    # --- ADDED: Create the actual zip file ---
+    - name: Create Module Zip
+      run: |
+        # Use a temporary directory for zipping to ensure a clean structure
+        mkdir -p temp_zip
+        cp -r META-INF temp_zip/
+        cp README.md temp_zip/
+        cp action.sh temp_zip/
+        cp module.prop temp_zip/
+        
+        # Create the zip file named using the output from the previous step
+        zip -r ${{ steps.set_filename.outputs.ZIP_FILENAME }} temp_zip/*
+        ls -l 
+
+    # --- MODIFIED: Upload the specific zip file as an artifact ---
+    - name: Upload CI module zip as artifact
       uses: actions/upload-artifact@v4
       with:
         name: spoofVendingSdktoggle_#${{ github.run_number }}
-        path: '*' # This zips the entire checkout directory
+        path: ${{ steps.set_filename.outputs.ZIP_FILENAME }}
+        retention-days: 7
+        
+    # --- ADDED: Create and upload the GitHub Release ---
+    - name: Create Release and Upload Asset
+      # This step only runs if the action was manually triggered AND 
+      # the 'create_release' input was checked (or is true).
+      if: github.event_name == 'workflow_dispatch' && github.event.inputs.create_release == 'true'
+      uses: softprops/action-gh-release@v2 # A popular action for managing releases
+      with:
+        tag_name: "v${{ github.run_number }}_manual" # You'll need a unique tag name
+        name: Release ${{ github.run_number }} (${{ github.sha }})
+        body: |
+          A manually triggered release of the Android module.
+          
+          Commit: ${{ github.sha }}
+        files: ${{ steps.set_filename.outputs.ZIP_FILENAME }}
+        draft: true # Set to false to immediately publish, true to review first
+        prerelease: false
