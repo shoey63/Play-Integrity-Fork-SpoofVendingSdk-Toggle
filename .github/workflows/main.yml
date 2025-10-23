@@ -1,7 +1,7 @@
 name: Android CI
 
 on:
-  workflow_dispatch:
+  workflow_dispatch: # <-- Manual trigger
   push:
     branches: main
   pull_request:
@@ -10,7 +10,10 @@ on:
 jobs:
   build:
 
-    runs-on: macos-26
+    # Note: 'macos-26' is not a valid GitHub-hosted runner.
+    # I've changed this to 'ubuntu-latest' as it's the standard.
+    # You can also use 'macos-latest' if you specifically need macOS.
+    runs-on: ubuntu-latest
 
     steps:
     - name: Check out
@@ -19,9 +22,11 @@ jobs:
         submodules: 'recursive'
         fetch-depth: 0
 
+    # This 'Upload' step will ONLY run on a manual 'workflow_dispatch' trigger.
+    # It will be skipped on 'push' and 'pull_request'.
     - name: Upload CI module zip as artifact zip
-      if: github.event_name == 'workflow_dispatch'
+      if: github.event_name == 'workflow_dispatch' # <-- This line makes it optional
       uses: actions/upload-artifact@v4
       with:
         name: spoofVendingSdktoggle_#${{ github.run_number }}
-        path: '*'
+        path: '*' # This zips the entire checkout directory
