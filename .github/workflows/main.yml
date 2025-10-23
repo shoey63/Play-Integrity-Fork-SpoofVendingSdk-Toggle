@@ -1,13 +1,16 @@
 name: Android CI
 
 on:
-  workflow_dispatch: # Allows manual run
+  workflow_dispatch:
     inputs:
       create_release:
-        description: 'Create a GitHub Release with the module zip'
-        type: boolean
+        description: 'Create a release with ZIP asset?'
         required: false
-        default: false
+        default: 'false'
+        type: choice
+        options:
+          - 'false'
+          - 'true'
   push:
     branches: main
   pull_request:
@@ -15,58 +18,47 @@ on:
 
 jobs:
   build:
-
     runs-on: macos-26
     
     permissions:
-       contents: write
+          contents: write
 
     steps:
-    - name: Check out
-      uses: actions/checkout@v5
-      with:
-        submodules: 'recursive'
-        fetch-depth: 0
+      - name: Check out
+        uses: actions/checkout@v5
+        with:
+          submodules: 'recursive'
+          fetch-depth: 0
 
-    - name: Set zip file name
-      id: set_filename
-      run: echo "ZIP_FILENAME=spoofVendingSdktoggle_$(date +%Y%m%d)_${{ github.sha }}.zip" >> $GITHUB_OUTPUT
-    
-    # --- ADDED: Create the actual zip file ---
-    - name: Create Module Zip
-      run: |
-        # Use a temporary directory for zipping to ensure a clean structure
-        mkdir -p temp_zip
-        cp -r META-INF temp_zip/
-        cp README.md temp_zip/
-        cp action.sh temp_zip/
-        cp module.prop temp_zip/
-        
-        # Create the zip file named using the output from the previous step
-        zip -r ${{ steps.set_filename.outputs.ZIP_FILENAME }} temp_zip/*
-        ls -l 
+      - name: Upload CI module zip as artifact zip
+        uses: actions/upload-artifact@v4
+        with:
+          name: spoofVendingSdktoggle_#${{ github.run_number }}
+          path: '*'
 
-    # --- MODIFIED: Upload the specific zip file as an artifact ---
-    - name: Upload CI module zip as artifact
-      uses: actions/upload-artifact@v4
-      with:
-        name: spoofVendingSdktoggle_#${{ github.run_number }}
-        path: ${{ steps.set_filename.outputs.ZIP_FILENAME }}
-        retention-days: 7
-        
-    # --- ADDED: Create and upload the GitHub Release ---
-    - name: Create Release and Upload Asset
-      # This step only runs if the action was manually triggered AND 
-      # the 'create_release' input was checked (or is true).
-      if: github.event_name == 'workflow_dispatch' && github.event.inputs.create_release == 'true'
-      uses: softprops/action-gh-release@v2 # A popular action for managing releases
-      with:
-        tag_name: "v${{ github.run_number }}_manual" # You'll need a unique tag name
-        name: Release ${{ github.run_number }} (${{ github.sha }})
-        body: |
-          A manually triggered release of the Android module.
-          
-          Commit: ${{ github.sha }}
-        files: ${{ steps.set_filename.outputs.ZIP_FILENAME }}
-        draft: true # Set to false to immediately publish, true to review first
-        prerelease: false
+      - name: Create ZIP for release
+        if: ${{ github.event.inputs.create_release == 'true' }}
+        run: zip -r release.zip *
+
+      - name: Create GitHub Release (optional)
+        if: ${{ github.event.inputs.create_release == 'true' }}
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: v${{ github.run_number }}
+          release_name: "CI Release #${{ github.run_number }}"
+          draft: false
+          prerelease: false
+
+      - name: Upload Release ZIP
+        if: ${{ github.event.inputs.create_release == 'true' }}
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./release.zip
+          asset_name: release_${{ github.run_number }}.zip
+          asset_content_type: application/zip
