@@ -75,3 +75,10 @@ echo "✅  Done. Changes should be active."
 echo "    Verifying file content:"
 echo ""
 echo "    $ICON spoofVendingSdk=$AFTER"
+
+# Optional delay for KernelSU/APatch auto-close
+if [ "$KSU" = "true" -o "$APATCH" = "true" ] && \
+   [ "$KSU_NEXT" != "true" ] && [ "$WKSU" != "true" ] && [ "$MMRL" != "true" ]; then
+    echo "Closing dialog in 5 seconds..."
+    sleep 5
+fi
