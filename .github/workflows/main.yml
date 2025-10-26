@@ -18,34 +18,67 @@ on:
 
 jobs:
   build:
-    runs-on: macos-26
+    runs-on: macos-latest
     permissions:
       contents: write
 
     steps:
-      - name: Check out
+      - name: 🧩 Check out
         uses: actions/checkout@v5
         with:
           submodules: 'recursive'
           fetch-depth: 0
 
-      - name: Upload CI module zip as artifact zip
+      - name: 🧹 Clean previous artifacts
+        run: |
+          rm -f spoofVendingSdkToggle*.zip
+          echo "Cleaning workspace complete."
+
+      - name: 📄 Extract version from module.prop
+        id: extract_version
+        run: |
+          VERSION=$(grep '^version=' module.prop | cut -d'=' -f2)
+          VERSION_CODE=$(grep '^versionCode=' module.prop | cut -d'=' -f2)
+          echo "MODULE_VERSION=$VERSION" >> $GITHUB_ENV
+          echo "MODULE_VERSION_CODE=$VERSION_CODE" >> $GITHUB_ENV
+
+      - name: 📦 Create module ZIP
+        run: |
+          zip -r spoofVendingSdkToggle-${{ env.MODULE_VERSION }}.zip * -x ".git*" ".github/*" "README.md"
+
+      - name: 💾 Upload CI module zip as artifact
         uses: actions/upload-artifact@v4
         with:
-          name: spoofVendingSdktoggle_#${{ github.run_number }}
+          name: spoofVendingSdkToggle_CI_${{ github.run_number }}
           path: '*'
 
-      - name: Create release ZIP
-        if: ${{ github.event.inputs.create_release == 'true' }}
-        run: zip -r release.zip *
-
-      - name: Create or Upload Release
+      - name: 🚀 Create or Upload Release
         if: ${{ github.event.inputs.create_release == 'true' }}
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v${{ github.run_number }}
-          name: "CI Release #${{ github.run_number }}"
-          files: release.zip
+          tag_name: v${{ env.MODULE_VERSION }}
+          name: "spoofVendingSdkToggle v${{ env.MODULE_VERSION }}"
+          body: |
+            ## 🚀 spoofVendingSdkToggle v${{ env.MODULE_VERSION }}
+
+            Automated CI release built from the latest main branch.
+
+            ### 🧩 Module Info
+            - **ID:** spoof-vending-toggle
+            - **Version:** ${{ env.MODULE_VERSION }}
+            - **Version Code:** ${{ env.MODULE_VERSION_CODE }}
+            - **Author:** shoey63 @ XDA Developers
+            - **Base:** osm0sis' Play Integrity Fork
+
+            ### 🆕 Highlights
+            - Toggles spoofVendingSdk in custom.pif.prop or custom.pif.json
+            - Displays advanced settings
+            - Updates spoofVendingSdk value
+            - Kills Play Integrity services for seamless updates
+
+            ---
+            *Built automatically by GitHub Actions.*
+          files: spoofVendingSdkToggle-${{ env.MODULE_VERSION }}.zip
           draft: false
           prerelease: false
         env:
