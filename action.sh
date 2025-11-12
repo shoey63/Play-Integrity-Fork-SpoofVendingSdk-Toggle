@@ -76,9 +76,16 @@ echo "    Verifying file content:"
 echo ""
 echo "    $ICON spoofVendingSdk=$AFTER"
 
-# Optional delay for KernelSU/APatch auto-close
+# Optional countdown delay for KernelSU/APatch auto-close (10s)
 if [ "$KSU" = "true" -o "$APATCH" = "true" ] && \
    [ "$KSU_NEXT" != "true" ] && [ "$WKSU" != "true" ] && [ "$MMRL" != "true" ]; then
+    echo
     echo "Closing dialog in 5 seconds..."
-    sleep 5
+    sleep 1
+    for i in 4 3 2 1; do
+        printf "                   %d ...\n" "$i"
+        sleep 1
+    done
+    echo "                   ✅"
+    echo
 fi
