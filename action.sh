@@ -83,9 +83,9 @@ if [ "$KSU" = "true" -o "$APATCH" = "true" ] && \
     echo "Closing dialog in 5 seconds..."
     sleep 1
     for i in 4 3 2 1; do
-        printf "                   %d ...\n" "$i"
+        printf "                  %d ...\n" "$i"
         sleep 1
     done
-    echo "                   ✅"
+    echo "                  ✅"
     echo
 fi
